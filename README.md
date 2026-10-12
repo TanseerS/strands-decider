@@ -1,0 +1,173 @@
+# strands-decider
+
+Routing tickets to teams with [Strands Decider 2B](https://strandsagents.com/blog/introducing-strands-decider/) —
+a 2B decision model that scores a fixed set of options instead of generating text.
+
+It runs locally. It is Apache-2.0 open weights on Hugging Face, not a Bedrock model,
+so no AWS account or model access request is involved.
+
+## Setup
+
+Python 3.14 has no torch wheels yet, so the venv is pinned to 3.12:
+
+```sh
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+```
+
+First run downloads ~5-6 GB to `~/.cache/huggingface`, as two repos: the
+checkpoint itself (a LoRA adapter + pointer head) and its base model,
+`Qwen/Qwen3.5-2B-Base`.
+
+## CLI
+
+```sh
+.venv/bin/strands-decider ask StrandsAgents/strands-decider-2B-hobson-v19 \
+  --state "Help! My payouts have been failing for 3 days!" \
+  --choice "Which team should handle this?=billing,sales,retail"
+```
+
+Other question types: `--noul "question?"` for calibrated yes/no, and
+`--score "question?=low,mid,high"` for an ordinal scale. `--json` prints the raw
+response, `--device mps|cuda|cpu` overrides auto-detection.
+
+## Python
+
+```sh
+.venv/bin/python route.py
+```
+
+`route.py` loads the engine once and routes several tickets, printing the chosen
+option, its confidence, and the full probability spread. Unlike the CLI, it attaches
+a description to each option via `ChoiceQuestion.criteria`.
+
+## API shape
+
+```python
+from strands_decider.infer import load_engine
+from strands_decider.schema import ChoiceQuestion
+
+engine = load_engine("StrandsAgents/strands-decider-2B-hobson-v19", device="mps")
+response = engine.ask(
+    "Help! My payouts have been failing for 3 days!",
+    {"team": ChoiceQuestion(
+        instructions="Which team should handle this?",
+        criteria={"billing": "payouts, refunds", "sales": "", "retail": ""},
+    )},
+)
+answer = response.answers["team"]
+answer.choice         # "billing"
+answer.confidence     # calibrated confidence
+answer.probabilities  # {"billing": ..., "sales": ..., "retail": ...}
+```
+
+`engine.ask` takes a dict of named questions, so one state can be asked several
+questions in a single pass.
+
+There is also `strands-decider serve`, which exposes `POST /v1/systemone`.
+
+## Measured on an M1 (8 GB), device=mps
+
+```
+loaded on mps in 10.5s
+
+Help! My payouts have been failing for 3 days!
+  -> billing  (confidence 0.902, 4632ms)
+     billing=0.935  sales=0.034  retail=0.031
+Do you offer volume discounts for 500+ seats?
+  -> sales  (confidence 0.718, 790ms)
+     sales=0.812  billing=0.150  retail=0.038
+The size chart on the product page is wrong.
+  -> retail  (confidence 0.943, 575ms)
+     retail=0.962  billing=0.022  sales=0.016
+```
+
+The first call carries MPS graph warmup; steady state is ~575-790 ms. The blog's
+~153 ms figure is an M3, so budget several times that on an M1.
+
+Two notes:
+
+- `causal_conv1d is not installed` on startup is harmless. It is CUDA-only and cannot
+  be installed on macOS, and the package's own profiling puts it at 32 ms of a 1,739 ms
+  forward. The part that actually matters, the gated-delta chunk rule, is replaced by
+  `strands_decider.mps_kernels`, which `SystemOneEngine` installs automatically
+  whenever `device` starts with `mps`.
+- Describing the options raises confidence. The bare CLI call, which sends `""` for
+  every option description, returned `billing` at 0.769 confidence / 0.846 probability
+  on the payouts ticket; `route.py`, with one line of description per team, returned
+  0.902 / 0.935 on the same ticket.
+
+---
+
+# Interpretable embeddings
+
+A conventional embedding is ~1,536 opaque floats. Score a document against a rubric
+of named questions instead and you get a short vector where **every axis has a name
+and a calibrated value** — so clustering, nearest-neighbour search, anomaly detection
+and drift monitoring all become self-explaining.
+
+```sh
+.venv/bin/python fingerprint.py          # documents -> data/fingerprints.csv
+.venv/bin/python analyze.py --k 4 --neighbours t16
+```
+
+| File | |
+|---|---|
+| `rubric.py` | The 11 axes. This is the design surface — edit this first. |
+| `fingerprint.py` | Corpus -> `fingerprints.csv` + `confidence.csv` |
+| `analyze.py` | Clusters, anomalies, neighbours, drift. Pure numpy, no sklearn. |
+| `data/tickets.jsonl` | 30 sample support tickets, in two periods |
+| `bench_prefix.py` | Batching benchmark (see below) |
+
+## Why the axes are the whole design
+
+`RUBRIC` maps a name to a `NoulQuestion` (yes/no) or `ScoreQuestion` (ordinal).
+`normalise()` puts every answer on [0, 1] so the axes are mutually comparable: a noul
+contributes its probability, a score contributes its expected level index divided by
+`levels - 1`.
+
+Keep the questions independent. Two axes asking the same thing in different words
+double-count that trait in every distance downstream.
+
+## What it produces
+
+Clusters name themselves by the axes where they depart most from the corpus mean:
+
+```
+cluster 0  (2):  security +0.49, billing -0.29, angry -0.19     t20 t26
+cluster 1  (7):  bug +0.40, angry +0.17, presales -0.11         t04 t10 t12 t16 ...
+cluster 3  (10): angry -0.26, presales +0.21, billing -0.20     t01 t02 t03 t05 ...
+```
+
+Drift reports *which trait* moved, not merely that the distribution shifted:
+
+```
+billing     0.28 -> 0.59   up 0.30
+angry       0.39 -> 0.57   up 0.18
+presales    0.41 -> 0.27   down 0.14
+```
+
+That last table is the point. Cosine distance between embedding centroids can tell you
+something changed; it cannot tell you your inbox got angrier about billing.
+
+## Cost
+
+Batching questions into one `ask()` is sublinear but not free. Measured on an M1 with
+an 828-character state:
+
+| | total | per question |
+|---|---|---|
+| 1 question | 978 ms | 978 ms |
+| 8 questions, one pass | 3,274 ms | 409 ms |
+| 8 questions, separate calls | 8,009 ms | 1,001 ms |
+
+So one pass is ~2.4x cheaper than separate calls, not ~8x. The shared prefix cache
+amortises encoding the state, not scoring the questions. Budget ~4.2 s per document
+for an 11-axis rubric on an M1; a CUDA box will be several times faster.
+
+## Adapting it
+
+1. Rewrite `RUBRIC` for your domain — that is the real work.
+2. Point `--corpus` at your own JSONL of `{"id", "text", "period"}`.
+3. `confidence.csv` is written alongside the values. Filter on it before trusting a
+   row: a fingerprint built from low-confidence answers is noise with a name.

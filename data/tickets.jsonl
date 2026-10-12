@@ -1,0 +1,30 @@
+{"id":"t01","period":"q1","text":"Hi, could you tell me whether the Pro plan includes SSO? We're evaluating for a 40 person team."}
+{"id":"t02","period":"q1","text":"The product images on the winter jacket listing are showing the wrong colour. Minor, but thought you should know."}
+{"id":"t03","period":"q1","text":"I'd like to upgrade from Starter to Growth. What's the prorated cost mid-cycle?"}
+{"id":"t04","period":"q1","text":"Password reset email never arrives. I've checked spam. Been locked out since yesterday morning."}
+{"id":"t05","period":"q1","text":"Feature request: it would be great if the export supported CSV as well as JSON."}
+{"id":"t06","period":"q1","text":"Size chart for the running shoes seems to be in US sizes but labelled UK. Ordered wrong size twice now."}
+{"id":"t07","period":"q1","text":"Can someone confirm our invoice for March? The VAT line looks like it was calculated at the old rate."}
+{"id":"t08","period":"q1","text":"Just wanted to say the new dashboard is a big improvement. No issue, carry on."}
+{"id":"t09","period":"q1","text":"Do you offer volume discounts for 500+ seats? Procurement needs a quote by Friday."}
+{"id":"t10","period":"q1","text":"The mobile app crashes when I open the settings tab. Android 14, Pixel 7. Happens every time."}
+{"id":"t11","period":"q1","text":"Shipping estimate said 3 days, it's been 11. Tracking number hasn't updated since the depot."}
+{"id":"t12","period":"q1","text":"Is there an API rate limit on the search endpoint? Docs don't mention one and we're seeing 429s."}
+{"id":"t13","period":"q1","text":"请问是否支持中文界面? We have a team in Shanghai who would use this daily."}
+{"id":"t14","period":"q1","text":"Minor typo on the pricing page: 'recieve' should be 'receive'. Third paragraph."}
+{"id":"t15","period":"q1","text":"Our account shows two users but we're being billed for five. Can you check?"}
+{"id":"t16","period":"q2","text":"Help! My payouts have been failing for 3 days! Finance is asking questions and I don't have answers."}
+{"id":"t17","period":"q2","text":"This is the fourth time this month the payout batch has silently failed. We are actively evaluating competitors."}
+{"id":"t18","period":"q2","text":"Charged twice for the annual plan. £2,400 taken out. Need this refunded today, not in 5-10 business days."}
+{"id":"t19","period":"q2","text":"I want to cancel. The billing problems have cost us more in staff time than the subscription is worth."}
+{"id":"t20","period":"q2","text":"We received a security advisory from our scanner flagging your JS SDK. Can you confirm whether CVE-2026-1188 affects us?"}
+{"id":"t21","period":"q2","text":"Payout reconciliation is off by 0.4% every month. Small, but our auditors have now flagged it."}
+{"id":"t22","period":"q2","text":"Why was my card charged on the 3rd when the billing date is the 15th? This has overdrawn the account."}
+{"id":"t23","period":"q2","text":"URGENT: all API calls returning 503 for the last 40 minutes. Our checkout is down. Please respond."}
+{"id":"t24","period":"q2","text":"Following up on ticket t18. Still no refund, no reply in 6 days. Escalating to our account manager."}
+{"id":"t25","period":"q2","text":"Does the Enterprise tier include a dedicated support SLA? Asking because of recent response times."}
+{"id":"t26","period":"q2","text":"Someone logged into our admin account from an IP in another country. We did not authorise this. Need audit logs now."}
+{"id":"t27","period":"q2","text":"The refund you issued was for the wrong amount, £180 instead of £1,800. Please correct."}
+{"id":"t28","period":"q2","text":"Quick one: can I change the invoice billing address myself or does support have to do it?"}
+{"id":"t29","period":"q2","text":"Our payout failed again. At this point I need a written explanation I can forward to our board."}
+{"id":"t30","period":"q2","text":"Loving the new reporting features. Separately, the CSV export still truncates at 10k rows."}

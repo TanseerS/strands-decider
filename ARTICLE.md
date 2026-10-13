@@ -70,7 +70,7 @@ On the payout question the gate keeps **1 of 6** chunks and drops every decoy:
 
 ```
 [keep] kb01  answers_it=0.79 same_topic=0.81  -- answers it (0.79)
-[drop] kb05  answers_it=0.55 same_topic=0.62  -- unsure
+[drop] kb05  answers_it=0.55 same_topic=0.62  -- does not answer it (0.55)
 [drop] kb04  answers_it=0.34 same_topic=0.39  -- does not answer it
 [drop] kb03  answers_it=0.23 same_topic=0.25  -- does not answer it
 [drop] kb02  answers_it=0.19 same_topic=0.19  -- does not answer it

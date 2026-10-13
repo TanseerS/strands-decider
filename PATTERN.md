@@ -45,7 +45,7 @@ about to answer the user's question.
 from patterns import ContextGate
 from strands_decider.infer import load_engine
 
-gate = ContextGate(load_engine(CHECKPOINT, device="mps"), threshold=0.6)
+gate = ContextGate(load_engine(CHECKPOINT, device="mps"))
 kept = gate.select(user_question, candidate_chunks, k=3)
 prompt = build_prompt(user_question, [c.text for c in kept])
 ```
@@ -58,20 +58,26 @@ model call, or in your retriever's post-processing step.
 
 ## Why calibration matters here
 
-`threshold` is applied to a calibrated probability, so 0.6 means the same thing
+`threshold` is applied to a calibrated probability, so 0.45 means the same thing
 across different corpora — you are not re-tuning a magic number per dataset.
 
-`min_confidence` makes the gate **abstain** rather than guess. A noul answer of
-0.5 is maximum doubt, so confidence is `abs(p - 0.5) * 2`, and anything below the
-floor is dropped. Dropping is the safe direction: a missing note makes the agent
-say "I don't know", while a wrong note makes it answer confidently and wrongly.
+`min_confidence` makes the gate **abstain** rather than guess, and defaults to
+0.0 — off. A noul answer of 0.5 is maximum doubt, so confidence is
+`abs(p - 0.5) * 2`, and anything below the floor is dropped.
+
+Abstention sounds like the safe default, and it measured badly. Shipping this
+with a floor of 0.35 scored P 1.00 / R 0.58 on the bundled eval: it discarded
+five of twelve correct answers, four by vetoing notes the threshold had already
+scored correctly. Removing it took F1 from 0.74 to 0.92. Raise it to ~0.10 only
+if a wrong chunk costs you more than a missing one, and sweep it on your own
+data with `sweep.py` rather than trusting either number.
 
 ## Knobs
 
 | | default | |
 |---|---|---|
-| `threshold` | 0.6 | Minimum `answers_it` to keep a chunk |
-| `min_confidence` | 0.35 | Below this the gate abstains and drops |
+| `threshold` | 0.45 | Minimum `answers_it` to keep a chunk |
+| `min_confidence` | 0.0 | Below this the gate abstains and drops. Off by default — see above |
 | `questions` | `RELEVANCE_QUESTIONS` | Swap in your own typed question set |
 
 ## What you get back

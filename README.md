@@ -198,11 +198,13 @@ retriever proposed 6: kb01 kb05 kb02 kb03 kb04 kb06
 
 Decider 2B gate:
   [keep] kb01  answers_it=0.79 same_topic=0.81 specificity=1.54  -- answers it (0.79)
-  [drop] kb05  answers_it=0.55 same_topic=0.62 specificity=1.26  -- abstained, confidence 0.10
-  [drop] kb04  answers_it=0.34 same_topic=0.39 specificity=0.98  -- abstained, confidence 0.32
-  [drop] kb06  answers_it=0.28 same_topic=0.28 specificity=0.91  -- does not answer it (0.28)
-  [drop] kb03  answers_it=0.23 same_topic=0.25 specificity=1.14  -- does not answer it (0.23)
+  [drop] kb05  answers_it=0.55 same_topic=0.62 specificity=1.26  -- does not answer it (0.55)
   [drop] kb02  answers_it=0.19 same_topic=0.19 specificity=1.00  -- does not answer it (0.19)
+  [drop] kb03  answers_it=0.23 same_topic=0.25 specificity=1.14  -- does not answer it (0.23)
+  [drop] kb04  answers_it=0.34 same_topic=0.39 specificity=0.98  -- does not answer it (0.34)
+  [drop] kb06  answers_it=0.28 same_topic=0.28 specificity=0.91  -- does not answer it (0.28)
+
+  13138ms for 6 chunks (2190ms each)
 
 Bedrock answered from kb01, 106 input tokens
 Ungated: all 6 chunks, 329 input tokens (68% saved)
@@ -212,10 +214,10 @@ Both answers are correct here — the gated one just costs a third as much and
 cannot be led astray by kb02. On a larger memory store, where the decoys
 outnumber the answer, that second property matters more than the tokens.
 
-Note `kb05`: a real payout note, about a *different* payout problem. The gate
-abstained at 0.55 rather than guessing. Dropping is the safe direction — a
-missing note makes the agent say "I don't know", a wrong one makes it answer
-confidently and wrongly.
+Note `kb05`: a real payout note, about a *different* payout problem. It lands
+at 0.55 — the closest call in the set, and the one the gate is least certain
+about. Earlier versions abstained on it; see below for why that turned out to
+be a bad default.
 
 ## Models
 

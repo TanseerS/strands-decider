@@ -1,0 +1,24 @@
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[ok ] our nightly payout batch keeps failing                   kept ['kb01', 'kb05']
+[ok ] why was my card charged on the 3rd when my billing date  kept ['kb02']
+[MISS] we were charged twice for the same annual plan           kept -
+[ok ] how long until a refund actually reaches the customer    kept ['kb04']
+[ok ] our payout totals are off by half a percent every month  kept ['kb05']
+[ok ] does the starter plan include single sign on             kept ['kb06']
+[ok ] we are getting 429 errors from the search endpoint       kept ['kb07']
+[ok ] password reset emails never arrive for our users         kept ['kb08']
+[ok ] the app crashes when opening the settings tab on android kept ['kb09']
+[ok ] tracking number has not updated in ten days              kept ['kb10']
+[ok ] someone logged into our admin account from an unknown IP kept ['kb11']
+[ok ] the VAT rate on our invoice looks wrong                  kept ['kb12']
+12 queries, 6 candidates each, threshold 0.45
+206s total, 2861ms per chunk decision
+             precision   recall      F1
+retriever         0.17     1.00    0.29
++ gate            0.92     0.92    0.92
+context shrunk 15321 -> 2455 chars (84% less)
+gate abstained on 0/72 chunk decisions
+raw scores cached to data/eval_scores.json -- sweep with: python sweep.py
+recall lost on 1:
+  we were charged twice for the same annual plan       wanted kb03 (does not answer it (0.27))
+.venv/bin/python eval.py --threshold 0.45 --min-confidence 0.0  16.32s user 37.11s system 23% cpu 3:47.49 total

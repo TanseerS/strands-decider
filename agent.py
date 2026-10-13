@@ -110,16 +110,20 @@ def main() -> None:
     engine = load_engine(CHECKPOINT, device=auto_device())
     gate = ContextGate(engine, threshold=args.threshold)
 
-    t0 = time.perf_counter()
-    verdicts = gate.score(query, as_chunks(candidates))
-    gate_ms = (time.perf_counter() - t0) * 1000
-
+    # Scored and printed one at a time: each decision is independent, and seeing
+    # them land as they are made is the whole point of a gate you can inspect.
     print("Decider 2B gate:")
-    for v in sorted(verdicts, key=lambda v: -v.relevance):
+    t0 = time.perf_counter()
+    verdicts = []
+    for chunk in as_chunks(candidates):
+        v = gate.score_one(query, chunk)
+        verdicts.append(v)
         mark = "keep" if v.keep else "drop"
         print(f"  [{mark}] {v.id}  answers_it={v.axes['answers_it']:.2f} "
               f"same_topic={v.axes['same_topic']:.2f} "
-              f"specificity={v.axes['specificity']:.2f}  -- {v.reason}")
+              f"specificity={v.axes['specificity']:.2f}  -- {v.reason}",
+              flush=True)
+    gate_ms = (time.perf_counter() - t0) * 1000
     print(f"\n  {gate_ms:.0f}ms for {len(verdicts)} chunks "
           f"({gate_ms / len(verdicts):.0f}ms each)\n")
 

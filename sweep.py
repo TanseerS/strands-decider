@@ -72,9 +72,19 @@ def main() -> None:
               f"{r['abstained']:>9d}")
 
     best = rows[0]
-    print(f"\nbest F1: threshold {best['threshold']:.2f}, "
-          f"min_confidence {best['min_conf']:.2f} -> "
-          f"P {best['precision']:.2f} / R {best['recall']:.2f} / F1 {best['f1']:.2f}, "
-          f"keeping {best['kept_pct']:.0f}% of context")
+    shipped = next(r for r in rows if r["threshold"] == 0.6 and r["min_conf"] == 0.35)
+    current = next(r for r in rows if r["threshold"] == 0.45 and r["min_conf"] == 0.0)
+
+    def line(label: str, r: dict) -> str:
+        return (f"  {label:<26}P {r['precision']:.2f}  R {r['recall']:.2f}  "
+                f"F1 {r['f1']:.2f}  context {r['kept_pct']:.0f}%")
+
+    print("\nthe abstention floor, measured:")
+    print(line("0.60 / 0.35  (shipped)", shipped))
+    print(line("0.45 / 0.00  (current)", current))
+    print(f"\n  removing it: recall {shipped['recall']:.2f} -> {current['recall']:.2f}, "
+          f"precision {shipped['precision']:.2f} -> {current['precision']:.2f}")
+    print(f"  best F1 overall: threshold {best['threshold']:.2f}, "
+          f"min_confidence {best['min_conf']:.2f} (F1 {best['f1']:.2f})")
 if __name__ == "__main__":
     main()

@@ -19,7 +19,7 @@
         v
   +--------------------------------------------+
   |  AMAZON BEDROCK                             |   us.amazon.nova-lite-v1:0
-  |  tone set by the gate's grounding level      |   117 input tokens
+  |  tone set by the gate's grounding level      |   160 input tokens
   +--------------------------------------------+       vs 340 ungated
         |
         v

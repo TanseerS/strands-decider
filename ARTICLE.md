@@ -120,23 +120,23 @@ relevant", and its output goes straight into an `if`.
 
 ## It working
 
-On the payout question the gate keeps **1 of 6** chunks and drops every decoy,
-with a reason attached to each decision:
+On the payout question the gate keeps **2 of 6** chunks — both payout notes —
+and drops every charge-related decoy, with a reason attached to each decision:
 
 ![Decider 2B keeping kb01 and dropping five decoys, then Bedrock answering](images/03-gate-decisions.png)
 
 ```
 [keep] kb01  answers_it=0.79 same_topic=0.81  -- answers it (0.79)
-[drop] kb05  answers_it=0.55 same_topic=0.62  -- does not answer it (0.55)
+[keep] kb05  answers_it=0.55 same_topic=0.62  -- answers it (0.55)
 [drop] kb04  answers_it=0.34 same_topic=0.39  -- does not answer it (0.34)
 [drop] kb03  answers_it=0.23 same_topic=0.25  -- does not answer it (0.23)
 [drop] kb02  answers_it=0.19 same_topic=0.19  -- does not answer it (0.19)
 
-Bedrock answered from kb01, grounding strong, 117 input tokens
-Ungated: all 6 chunks, 340 input tokens (66% fewer)
+Bedrock answered from kb01 kb05, grounding strong, 160 input tokens
+Ungated: all 6 chunks, 340 input tokens (53% fewer)
 ```
 
-Both answers are correct here. The gated one just costs a third as much.
+Both answers are correct here. The gated one just costs half as much.
 
 I assumed the gate's real value was preventing wrong answers. I was wrong about
 that too — see below.
@@ -315,9 +315,31 @@ prompt = build_prompt(user_question, [c.text for c in kept])
 ```
 
 Any object exposing `.ask(state, questions)` works as the engine. Chunks need only
-`.id` and `.text`. For a [Strands Agents](https://strandsagents.com) agent, call
-`select()` from an `InterventionHandler` before the model call, or in your
-retriever's post-processing step. Every decision comes back as a `GateResult`
+`.id` and `.text`.
+
+For a [Strands Agents](https://strandsagents.com) agent, the wiring is already
+written — [`patterns/strands_wiring.py`](https://github.com/TanseerS/strands-decider/blob/main/patterns/strands_wiring.py)
+is an `InterventionHandler` that needs no changes to the agent itself:
+
+```python
+agent = Agent(
+    model=model,
+    tools=[search_memory],
+    interventions=[ContextGateIntervention(gate, retriever_tool="search_memory")],
+)
+```
+
+`after_tool_call` gates the retriever's output before it reaches the
+conversation; `before_model_call` injects the grounding level. Other tools pass
+through untouched. [`strands_agent.py`](https://github.com/TanseerS/strands-decider/blob/main/strands_agent.py)
+is a complete working agent using it:
+
+```
+Tool #1: search_memory
+[context-gate] grounding: strong
+  used    kb01  0.79  (a concrete procedure, answers it (0.79))
+  ignored kb04  0.34  (does not answer it (0.34))
+``` Every decision comes back as a `GateResult`
 carrying its score, its confidence and a human-readable reason, so the agent can
 explain its own context window.
 

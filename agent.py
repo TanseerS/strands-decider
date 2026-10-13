@@ -107,7 +107,8 @@ def main() -> None:
     ap.add_argument("--memory", type=Path, default=Path("data/memory.jsonl"))
     ap.add_argument("--candidates", type=int, default=6)
     ap.add_argument("--keep", type=int, default=3)
-    ap.add_argument("--threshold", type=float, default=0.6)
+    ap.add_argument("--threshold", type=float, default=None,
+                    help="override ContextGate's tuned default (0.45)")
     ap.add_argument("--compare", action="store_true",
                     help="also answer with the ungated context, to show the difference")
     args = ap.parse_args()
@@ -123,7 +124,11 @@ def main() -> None:
     print(f"retriever proposed {len(candidates)}: {' '.join(c['id'] for c in candidates)}\n")
 
     engine = load_engine(CHECKPOINT, device=auto_device())
-    gate = ContextGate(engine, threshold=args.threshold)
+    gate = (
+        ContextGate(engine, threshold=args.threshold)
+        if args.threshold is not None
+        else ContextGate(engine)
+    )
 
     # Scored and printed one at a time: each decision is independent, and seeing
     # them land as they are made is the whole point of a gate you can inspect.

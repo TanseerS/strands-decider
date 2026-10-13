@@ -7,7 +7,9 @@
 | **Decision pattern** | Context and memory — score which chunks are relevant before injecting them |
 | **Decision model** | [Strands Decider 2B](https://huggingface.co/StrandsAgents/strands-decider-2B-hobson-v19) (`hobson-v19`), local |
 | **Generative model** | [Amazon Bedrock](https://aws.amazon.com/bedrock/) `us.amazon.nova-lite-v1:0` |
-| **Reusable pattern** | [`patterns/context_relevance.py`](patterns/context_relevance.py) · [`PATTERN.md`](PATTERN.md) |
+| **Reusable pattern** | [`patterns/context_relevance.py`](patterns/context_relevance.py) — typed questions, `ContextGate`, `GateReport` |
+| **Wiring** | [`patterns/strands_wiring.py`](patterns/strands_wiring.py) — a Strands `InterventionHandler`; example in [`strands_agent.py`](strands_agent.py) |
+| **How to use it** | [`PATTERN.md`](PATTERN.md) |
 | **Write-up** | [`ARTICLE.md`](ARTICLE.md) |
 | **Demo** | [`demo.mp4`](demo.mp4) — 2560×1440, 1:54 |
 
@@ -61,17 +63,18 @@ retriever proposed 6: kb01 kb05 kb02 kb03 kb04 kb06
 
 Decider 2B gate:
   [keep] kb01  answers_it=0.79 same_topic=0.81 specificity=1.54  -- answers it (0.79)
-  [drop] kb05  answers_it=0.55 same_topic=0.62 specificity=1.26  -- does not answer it (0.55)
+  [keep] kb05  answers_it=0.55 same_topic=0.62 specificity=1.26  -- answers it (0.55)
   [drop] kb02  answers_it=0.19 same_topic=0.19 specificity=1.00  -- does not answer it (0.19)
   ...
 
 Memory trace:
   grounding: strong
     used    kb01  0.79  (a concrete procedure, answers it (0.79))
-    ignored kb05  0.55  (does not answer it (0.55))
+    used    kb05  0.55  (general guidance, answers it (0.55))
+    ignored kb04  0.34  (does not answer it (0.34))
 
-Bedrock answered from kb01, grounding strong, 117 input tokens
-Ungated: all 6 chunks, 340 input tokens (66% saved)
+Bedrock answered from kb01 kb05, grounding strong, 160 input tokens
+Ungated: all 6 chunks, 340 input tokens (53% saved)
 ```
 
 The retriever deliberately has no relevance floor, because that is how top-k
@@ -153,7 +156,7 @@ ways. **The ungated agent answered correctly 5 of 5**, with six candidates and
 again with the full twelve-note store. Nova-lite ignores a card-charge note when
 asked about payout batches. On one query the gate was actively harmful.
 
-What the gate measurably buys: **cost** (117 input tokens vs 340, and 105 vs 586
+What the gate measurably buys: **cost** (160 input tokens vs 340, and 105 vs 586
 with the full store), **the ability to decline**, and **an auditable context
 window**. Not accuracy, at this scale. That may change as a store grows into the
 thousands — unmeasured, so unclaimed.
@@ -166,6 +169,8 @@ Raw output: [`data/contrast_6.txt`](data/contrast_6.txt), [`data/contrast_12.txt
 |---|---|
 | `agent.py` | the agent — retrieve, gate, answer via Bedrock |
 | `patterns/context_relevance.py` | **the reusable pattern**: `ContextGate`, typed questions, `GateReport` |
+| `patterns/strands_wiring.py` | **the wiring**: a Strands `InterventionHandler` |
+| `strands_agent.py` | the same gate inside a real Strands agent |
 | `eval.py` / `sweep.py` | labelled eval, and offline threshold sweep |
 | `contrast.py` | gated vs ungated answers |
 | `probe.py` | diagnosing the kb03 rejection |

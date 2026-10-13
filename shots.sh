@@ -54,10 +54,14 @@ render 08-repo-structure.png  900 "ls -1 *.py *.md *.sh *.tape data/ patterns/"
 SLEEP=75s render 09-agent-declines.png  900 "./.venv/bin/python agent.py 'we were charged twice for the same annual plan' 2>/dev/null | tail -22"
 
 echo "extracting from demo.mp4:"
-grab 03-gate-decisions.png     72
-grab 04-eval-results.png       94
-grab 05-sweep-abstention.png   98
-grab 06-pattern-usage.png     111
+# Offsets drift whenever the agent's runtime changes. Re-find them with:
+#   for t in $(seq 55 3 110); do ffmpeg -v error -ss $t -i demo.mp4 \
+#     -frames:v 1 /tmp/$t.png -y; done; ls -l /tmp/*.png
+# Plateaus of similar file size are sections; blanks are the `clear` between.
+grab 03-gate-decisions.png     64
+grab 04-eval-results.png       85
+grab 05-sweep-abstention.png   95
+grab 06-pattern-usage.png     108
 
 echo
 ls -la images/

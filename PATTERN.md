@@ -78,8 +78,38 @@ prompt = build_prompt(user_question, [c.text for c in kept])
 Any object exposing `.ask(state, questions)` works as the engine. Chunks need
 only `.id` and `.text`; `as_chunks()` adapts plain dicts.
 
-For a Strands agent, call `select()` from an `InterventionHandler` before the
-model call, or in your retriever's post-processing step.
+### In a Strands agent
+
+[`patterns/strands_wiring.py`](patterns/strands_wiring.py) is the drop-in: an
+`InterventionHandler` that needs no changes to the agent's own code.
+
+```python
+from strands import Agent
+from patterns.strands_wiring import ContextGateIntervention
+
+agent = Agent(
+    model=model,
+    tools=[search_memory],
+    interventions=[ContextGateIntervention(gate, retriever_tool="search_memory")],
+)
+```
+
+It hooks two points. `after_tool_call` gates the retriever's output before it
+enters the conversation, so the model never sees what did not survive.
+`before_model_call` injects the grounding level, so the agent hedges when the
+evidence is thin. Tools other than the named retriever pass through untouched,
+and a retriever returning anything other than `{"chunks": [{"id", "text"}]}` is
+left alone — safe to attach to an existing agent.
+
+[`strands_agent.py`](strands_agent.py) is a complete working example:
+
+```
+Tool #1: search_memory
+[context-gate] grounding: strong
+  used    kb01  0.79  (a concrete procedure, answers it (0.79))
+  used    kb05  0.55  (general guidance, answers it (0.55))
+  ignored kb04  0.34  (does not answer it (0.34))
+```
 
 ## Letting the agent explain itself
 

@@ -1,0 +1,63 @@
+
+
+==============================================================================
+Q: we were charged twice for the same annual plan
+   correct note: kb03   |   decoy risk: kb02 blames a plan upgrade
+
+   gate (21134ms): kept nothing   dropped ['kb02', 'kb03', 'kb04', 'kb06', 'kb01', 'kb05', 'kb07', 'kb08', 'kb09', 'kb10', 'kb11', 'kb12']
+
+   GATED (0 tok):
+     (gate kept nothing -- the agent would decline)
+
+   UNGATED (584 tok):
+     Double charges occur when a payment is retried after a gateway timeout. The duplicate charge auto-voids in 7 days, but support can force-void it immediately via the Billing console.
+
+==============================================================================
+Q: my card was charged on a date I did not expect
+   correct note: kb02   |   decoy risk: kb03 blames a gateway retry
+
+   gate (18615ms): kept ['kb02']   dropped ['kb03', 'kb04', 'kb01', 'kb05', 'kb06', 'kb07', 'kb08', 'kb09', 'kb10', 'kb11', 'kb12']
+
+   GATED (105 tok):
+     If your card was charged on an unexpected date, it may be due to a billing anchor change caused by a plan upgrade. Upgrades reset the billing anchor to the upgrade date, which is expected behavior, not a bug.
+
+   UNGATED (586 tok):
+     If your card was charged on an unexpected date, it's likely due to a billing anchor change caused by a plan upgrade. Upgrades reset the billing anchor to the upgrade date, which is expected behavior.
+
+==============================================================================
+Q: our payout totals are slightly off every month
+   correct note: kb05   |   decoy risk: kb01 blames an expired mandate
+
+   gate (18268ms): kept ['kb05']   dropped ['kb01', 'kb02', 'kb03', 'kb04', 'kb06', 'kb07', 'kb08', 'kb09', 'kb10', 'kb11', 'kb12']
+
+   GATED (97 tok):
+     The persistent sub-1% discrepancy between your reported and settled payout totals likely indicates that foreign exchange (FX) conversion is being applied at settlement rather than at capture. To resolve this, enable capture-time FX locking in Settings > Payouts.
+
+   UNGATED (584 tok):
+     The persistent sub-1% discrepancy between reported and settled payout totals usually indicates that FX conversion is applied at settlement rather than at capture. To resolve this, enable capture-time FX locking in Settings > Payouts.
+
+==============================================================================
+Q: the refund has not reached our customer yet
+   correct note: kb04   |   decoy risk: kb03 blames a duplicate charge
+
+   gate (19153ms): kept ['kb04']   dropped ['kb10', 'kb02', 'kb08', 'kb11', 'kb01', 'kb03', 'kb05', 'kb06', 'kb07', 'kb09', 'kb12']
+
+   GATED (102 tok):
+     If the refund was issued after 14:00 UTC, it should have settled the next business day. Additionally, the card issuer may take an additional 3-5 days to reflect the funds in the customer's account. Please allow some time for these processes to complete.
+
+   UNGATED (583 tok):
+     If the refund has not reached your customer yet, please note that refunds issued before 14:00 UTC settle the same day, while those issued after 14:00 UTC settle the next business day. Additionally, card issuers may take an additional 3-5 days to reflect the refund in the customer's account.
+
+==============================================================================
+Q: our nightly payout batch keeps failing
+   correct note: kb01   |   decoy risk: kb02/kb03 are charge notes
+
+   gate (85506ms): kept ['kb01', 'kb05']   dropped ['kb02', 'kb03', 'kb04', 'kb06', 'kb07', 'kb08', 'kb09', 'kb10', 'kb11', 'kb12']
+
+   GATED (149 tok):
+     The nightly payout batch is failing because the bank authorisation mandate is expired. To resolve this, re-authorise under Settings > Payouts > Bank mandate. The batch will retry automatically within 4 hours of re-authorisation.
+
+   UNGATED (581 tok):
+     The nightly payout batch failure with a FAILED_UPSTREAM status is almost always due to an expired bank authorisation mandate. To resolve this, re-authorise under Settings > Payouts > Bank mandate. The batch will retry automatically within 4 hours of re-authorisation.
+
+.venv/bin/python contrast.py --candidates 12  15.05s user 21.94s system 19% cpu 3:09.98 total

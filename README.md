@@ -210,9 +210,11 @@ Bedrock answered from kb01, 106 input tokens
 Ungated: all 6 chunks, 329 input tokens (68% saved)
 ```
 
-Both answers are correct here — the gated one just costs a third as much and
-cannot be led astray by kb02. On a larger memory store, where the decoys
-outnumber the answer, that second property matters more than the tokens.
+Both answers are correct here — the gated one just costs a third as much.
+
+Whether the gate makes the agent *more correct* is a separate question, and the
+answer measured on this store is no: see "Does the gate make the agent right?"
+below.
 
 Note `kb05`: a real payout note, about a *different* payout problem. It lands
 at 0.55 — the closest call in the set, and the one the gate is least certain
@@ -268,6 +270,36 @@ instant and never re-runs the model.
 One genuine miss remains at the current settings: kb03 scores 0.27 on "we were
 charged twice for the same annual plan" despite being exactly the right note. That
 one is unexplained.
+
+## Does the gate make the agent right?
+
+No, not on a store this size — tested rather than assumed.
+
+```sh
+.venv/bin/python contrast.py --candidates 12
+```
+
+Five questions, each with a plausibly-misleading note in the store, run both
+gated and ungated. **The ungated agent answered correctly 5 times out of 5**,
+with six candidates and again with the full twelve-note store. Nova-lite ignores
+a note about card charges when asked about payout batches.
+
+On one query the gate was actively harmful: it kept nothing and would have
+declined, while the ungated agent answered correctly from the note it discarded
+(the kb03 miss from the eval, showing up as real damage).
+
+What the gate does buy, measured:
+
+| | |
+|---|---|
+| Cost | 105 input tokens vs 586 with the full store — 82% fewer |
+| Declining | a ranker cannot say "none of these"; a calibrated gate can |
+| Explainability | every include/exclude carries a named axis and a number |
+
+What it does not buy here is accuracy. That may change when the store grows into
+the thousands and the decoy ratio worsens — unmeasured, so unclaimed.
+
+Raw output: `data/contrast_6.txt`, `data/contrast_12.txt`.
 
 ## Submission assets
 

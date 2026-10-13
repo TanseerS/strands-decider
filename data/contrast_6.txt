@@ -1,0 +1,63 @@
+
+
+==============================================================================
+Q: we were charged twice for the same annual plan
+   correct note: kb03   |   decoy risk: kb02 blames a plan upgrade
+
+   gate (14545ms): kept nothing   dropped ['kb02', 'kb03', 'kb04', 'kb06', 'kb01', 'kb05']
+
+   GATED (0 tok):
+     (gate kept nothing -- the agent would decline)
+
+   UNGATED (332 tok):
+     Double charges occur when a payment is retried after a gateway timeout. The duplicate auto-voids in 7 days, but support can force-void immediately via the Billing console.
+
+==============================================================================
+Q: my card was charged on a date I did not expect
+   correct note: kb02   |   decoy risk: kb03 blames a gateway retry
+
+   gate (10216ms): kept ['kb02']   dropped ['kb03', 'kb04', 'kb01', 'kb05', 'kb06']
+
+   GATED (105 tok):
+     If your card was charged on an unexpected date, it may be due to a billing anchor change caused by a plan upgrade. Upgrades reset the billing anchor to the upgrade date, which is expected behavior.
+
+   UNGATED (334 tok):
+     If your card was charged on an unexpected date, check whether your billing anchor was changed by a plan upgrade. Upgrades reset the anchor to the upgrade date. This is expected behavior, not a bug.
+
+==============================================================================
+Q: our payout totals are slightly off every month
+   correct note: kb05   |   decoy risk: kb01 blames an expired mandate
+
+   gate (9273ms): kept ['kb05']   dropped ['kb01', 'kb02', 'kb03', 'kb04', 'kb06']
+
+   GATED (97 tok):
+     Based on the reference notes, a persistent sub-1% discrepancy between reported and settled payout totals usually indicates FX conversion applied at settlement rather than at capture. To resolve this, you should enable capture-time FX locking in Settings > Payouts.
+
+   UNGATED (332 tok):
+     Payout reconciliation drift: a persistent sub-1% discrepancy between reported and settled payout totals usually indicates FX conversion applied at settlement rather than at capture. Enable capture-time FX locking in Settings > Payouts.
+
+==============================================================================
+Q: the refund has not reached our customer yet
+   correct note: kb04   |   decoy risk: kb03 blames a duplicate charge
+
+   gate (9208ms): kept ['kb04']   dropped ['kb10', 'kb02', 'kb08', 'kb11', 'kb01']
+
+   GATED (102 tok):
+     If the refund was issued before 14:00 UTC, it should have settled the same day. If it was issued after 14:00, it should have settled the next business day. Additionally, card issuers may take an additional 3-5 days to reflect the funds. Please allow some time for these processes to complete. If the refund still hasn't appeared, please provide more details for further assistance.
+
+   UNGATED (332 tok):
+     If the refund has not reached your customer yet, please note that refunds issued before 14:00 UTC settle the same day, while those issued after 14:00 UTC settle the next business day. Additionally, card issuers may add a further 3-5 days before the customer sees the funds.
+
+==============================================================================
+Q: our nightly payout batch keeps failing
+   correct note: kb01   |   decoy risk: kb02/kb03 are charge notes
+
+   gate (9187ms): kept ['kb01', 'kb05']   dropped ['kb02', 'kb03', 'kb04', 'kb06']
+
+   GATED (149 tok):
+     The nightly payout batch failure is almost always due to an expired bank authorisation mandate. To resolve this, re-authorise the mandate under Settings > Payouts > Bank mandate. The batch will retry automatically within 4 hours of re-authorisation.
+
+   UNGATED (329 tok):
+     The nightly payout batch reports FAILED_UPSTREAM, the cause is almost always an expired bank authorisation mandate. Re-authorise under Settings > Payouts > Bank mandate. Batches retry automatically within 4 hours of re-authorisation.
+
+.venv/bin/python contrast.py  9.18s user 9.19s system 22% cpu 1:20.75 total

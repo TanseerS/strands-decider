@@ -39,6 +39,31 @@ Decide whether this reference note should be given to an assistant that is
 about to answer the user's question.
 ```
 
+## Why not a cross-encoder reranker?
+
+A reranker does score query-document pairs, and if all you need is "put the best
+chunk first", use one. This pattern exists for the three things a reranker cannot
+do:
+
+| | reranker | typed decision model |
+|---|---|---|
+| Output | relative ordering | calibrated absolute probability |
+| Threshold | re-tuned per corpus | 0.45 means the same thing everywhere |
+| "None of these" | cannot express it | `answers_it` low across the board |
+| Why it chose | an opaque score | named axes you wrote |
+
+The practical difference is the cut, not the ranking. A reranker tells you kb01
+beats kb02; it does not tell you whether kb01 is good enough to use at all. With
+six candidates and no relevant answer among them, a reranker still returns a
+confident ordering of six irrelevant notes. A calibrated `answers_it` says 0.2
+six times, and the gate injects nothing.
+
+The axes are the other half. `same_topic` and `specificity` are not reranking
+signals; they are questions chosen for this corpus, and their values are legible
+in a log. You can add an axis for anything your domain cares about -- is it
+current, is it authoritative, does it apply to this customer's plan -- without
+training anything.
+
 ## Wiring it in
 
 ```python

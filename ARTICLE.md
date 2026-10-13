@@ -102,9 +102,35 @@ Bedrock answered from kb01, 106 input tokens
 Ungated: all 6 chunks, 329 input tokens (68% fewer)
 ```
 
-Both answers are correct here. The gated one just costs a third as much and cannot
-be led astray by kb02. On a larger memory store, where decoys outnumber the answer,
-that second property matters more than the tokens.
+Both answers are correct here. The gated one just costs a third as much.
+
+I assumed the gate's real value was preventing wrong answers. I was wrong about
+that too — see below.
+
+## "Isn't this just a reranker?"
+
+It is the first thing anyone technical asks, so: a cross-encoder reranker does
+score query-document pairs, and if all you need is to put the best chunk first,
+use one. Three things make this different.
+
+**A reranker ranks; it cannot cut.** It tells you kb01 beats kb02. It does not
+tell you whether kb01 is good enough to use at all. Hand a reranker six
+candidates when none of them answers the question, and you get a confident
+ordering of six irrelevant notes. A calibrated `answers_it` returns 0.2 six
+times and the gate injects nothing — and the agent says "I don't know" instead
+of confabulating from the least-bad option.
+
+**A reranker's score is relative; this one is absolute.** Reranker scores need
+re-tuning per corpus because they only mean something next to each other. 0.45
+here means the same thing on your notes as on mine, because the model was
+trained so the number is honest. That is what makes the pattern portable rather
+than just my code.
+
+**A reranker has one axis; this has as many as you want, and you name them.**
+`same_topic` and `specificity` are not reranking signals. They are questions I
+chose for this corpus, and their values show up in the log, so the agent can
+explain its own context window in words a human wrote. Want "is this note still
+current" or "does this apply to the customer's plan"? Add an axis. No training.
 
 ## What I got wrong
 
@@ -152,6 +178,53 @@ which took about ten minutes.
 
 The gate now defaults to `threshold=0.45, min_confidence=0.0`, and ships with
 `sweep.py` so nobody has to inherit my guess.
+
+## Does the gate actually make the agent *right*?
+
+No. Not at this scale, and I tested it rather than assuming.
+
+I picked five questions where a plausibly-misleading note sits in the store —
+"we were charged twice" with a note blaming plan upgrades next to one blaming
+gateway retries — and ran each both ways.
+
+```
+query                          gated              ungated
+charged twice                  kept nothing       correct
+unexpected charge date         correct            correct
+payout totals off              correct            correct
+refund not arrived             correct            correct
+payout batch failing           correct            correct
+```
+
+**The ungated agent was correct five times out of five.** I re-ran it with the
+entire twelve-note store instead of six candidates, doubling the decoys. Still
+five out of five. Nova-lite reads a note about card charges, sees it does not
+answer a question about payout batches, and ignores it. The generative model is
+simply better at discarding irrelevant context than I gave it credit for.
+
+Worse, on the first query **the gate was actively harmful**: it kept nothing and
+the agent would have declined, while the ungated agent answered correctly from
+the note the gate had thrown away. That is the same kb03 miss from the eval,
+showing up as real damage rather than a number in a table.
+
+So what does the gate actually buy?
+
+- **Cost.** 105 input tokens against 586 with the full store — 82% fewer. That is
+  real, it is measured, and it scales with the store.
+- **The ability to decline.** A ranker cannot say "none of these". A calibrated
+  gate can, and an agent that says "I don't know" beats one that confabulates.
+- **Explainability.** Every inclusion and exclusion has a named axis and a number
+  attached, so the context window can be audited after the fact.
+
+What it does not buy, on a twelve-note store with a competent generative model,
+is accuracy. I would expect that to change as the store grows into the thousands
+and the decoy-to-answer ratio gets much worse — but I have not measured that, so
+I am not claiming it.
+
+The honest summary: this is a cost-and-control pattern, not an accuracy pattern.
+Both experiments are in [`data/contrast_6.txt`](https://github.com/TanseerS/strands-decider/blob/main/data/contrast_6.txt)
+and [`data/contrast_12.txt`](https://github.com/TanseerS/strands-decider/blob/main/data/contrast_12.txt),
+reproducible with `python contrast.py --candidates 12`.
 
 ## Why calibration is the thing
 

@@ -5,7 +5,7 @@ beats below. Everything here is real output — nothing is staged.
 
 | Time | Show | Say |
 |---|---|---|
-| 0:00–0:15 | Title / the memory store | "My agent answers support questions from a memory store. The hard part isn't finding notes — it's knowing which ones deserve to be in the prompt." |
+| 0:00–0:15 | The decline trace (`images/09-agent-declines.png`) | "This is my agent refusing to answer — and telling me it might be wrong to refuse. kb03 is the right note. It scored it 0.27, threw it away, and said so." |
 | 0:15–0:40 | `data/memory.jsonl`, highlight kb01 vs kb02/kb03 | "These three notes all use the same words: payout, charge, billing. Only one answers a question about failed payout batches. Embedding similarity can't tell them apart, because they genuinely are similar." |
 | 0:40–1:20 | `agent.py --compare` running, gate output on screen | "Retrieval proposes six. Decider 2B scores each with a typed question — does this note actually answer the question — and keeps one. Every decision comes with a calibrated number and a reason." |
 | 1:20–1:45 | Point at the kb05 line | "This is the part I didn't expect. kb05 is a real payout note, about a *different* payout problem. Decider scored it 0.55 — maximum doubt — and the gate abstained rather than guessing. Dropping is the safe direction: a missing note makes the agent say I don't know, a wrong note makes it answer confidently and wrongly." |

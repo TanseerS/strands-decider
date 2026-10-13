@@ -1,4 +1,4 @@
-# I let a 2B model decide what my agent is allowed to remember
+# The agent that shows you the memory it threw away
 
 **Tags:** `#strands-decider-2b` `#context-memory`
 
@@ -11,6 +11,40 @@
 | **Demo video** | *(paste your upload link here)* |
 
 ---
+
+Here is my support agent refusing to answer a question, and telling me it might
+be wrong to refuse:
+
+![The agent declining, and showing the note its own gate rejected](images/09-agent-declines.png)
+
+```
+Memory trace:
+  grounding: none
+    ignored kb03  0.27  (does not answer it (0.27))
+
+Nothing in memory answers this, so the agent declines rather than
+inventing an answer. The closest it looked at:
+
+  kb03  0.27  Double charges: duplicate charges occur when a payment is retried
+              after a gateway timeout...
+```
+
+kb03 is the right note. The customer was charged twice; that note explains
+exactly why duplicate charges happen. The agent read it, scored it 0.27, decided
+it did not answer the question, and threw it away — and then *told me so*, with
+the number attached.
+
+That is the thing I actually built. Not a filter that silently drops context, but
+an agent that can account for what it read, what it refused, and how sure it was
+about each call — so when it gets one wrong, you find out from the agent instead
+of from a confused customer.
+
+The rest of this is how it works, what it cost, and the three times measuring it
+proved me wrong.
+
+---
+
+## Why there is a gate at all
 
 Retrieval is good at finding notes that are *about* your question. It is bad at
 finding notes that *answer* it. Those are different things, and the gap between
@@ -129,24 +163,11 @@ best surviving note means something by itself:
   they do not cover
 - **none** — decline
 
-The decline case is the one I like most, because it makes the gate's own
-mistakes visible. Remember kb03, the note the gate wrongly rejects. Ask "we were
-charged twice for the same annual plan" and the agent says:
-
-![The agent declining, and showing the note its own gate rejected](images/09-agent-declines.png)
-
-```
-Nothing in memory answers this, so the agent declines rather than
-inventing an answer. The closest it looked at:
-
-  kb03  0.27  Double charges: duplicate charges occur when a payment is retried
-              after a gateway timeout...
-```
-
-The correct answer is sitting right there at 0.27, and you can see the gate threw
-it away. A silent decline looks identical whether the memory store is empty or
-the gate just made a mistake, and those are very different problems. Showing the
-near-misses means a bad rejection shows up as a bug report instead of a shrug.
+Which brings back the trace this article opened with. A silent decline looks
+identical whether the memory store is empty or the gate just made a mistake, and
+those are very different problems. Showing the near-misses means a bad rejection
+arrives as a bug report instead of a shrug — and in that case it was a real one,
+which is why there is a section below about why kb03 scores 0.27.
 
 ## "Isn't this just a reranker?"
 

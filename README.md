@@ -1,4 +1,4 @@
-# A context window chosen by Strands Decider 2B
+# The agent that shows you the memory it threw away
 
 **Agent Experience Hackathon submission** · `#strands-decider-2b` `#context-memory`
 
@@ -10,6 +10,24 @@
 | **Reusable pattern** | [`patterns/context_relevance.py`](patterns/context_relevance.py) · [`PATTERN.md`](PATTERN.md) |
 | **Write-up** | [`ARTICLE.md`](ARTICLE.md) |
 | **Demo** | [`demo.mp4`](demo.mp4) — 2560×1440, 1:54 |
+
+```
+Memory trace:
+  grounding: none
+    ignored kb03  0.27  (does not answer it (0.27))
+
+Nothing in memory answers this, so the agent declines rather than
+inventing an answer. The closest it looked at:
+
+  kb03  0.27  Double charges: duplicate charges occur when a payment is retried...
+```
+
+kb03 is the right note, and the agent threw it away — then said so, with the
+number attached. That is the point of this: not a filter that silently drops
+context, but an agent that can account for what it read, what it refused, and how
+sure it was, so a bad call surfaces as a bug report instead of a shrug.
+
+## Why there is a gate at all
 
 Retrieval is good at finding notes that are *about* your question. It is bad at
 finding notes that *answer* it. Those are different things, and the gap is where

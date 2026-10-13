@@ -275,5 +275,8 @@ one is unexplained.
 |---|---|
 | `ARTICLE.md` | Draft of the Builder Center article |
 | `PATTERN.md` | The reusable decision pattern, with usage notes |
-| `VIDEO.md` | Timed shot list for the demo video |
-| `demo.sh` | Scripted demo, paced for screen recording |
+| `VIDEO.md` | Timed shot list, and notes on the one edit in the video |
+| `demo.sh` | Scripted demo, paced for live narration |
+| `demo.tape` | vhs script that records the demo |
+| `render.sh` | `vhs demo.tape` + the trim step -> `demo.mp4` |
+| `demo.mp4` | 2560x1440, 1:53, silent with on-screen captions |

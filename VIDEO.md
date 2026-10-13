@@ -20,3 +20,24 @@ beats below. Everything here is real output — nothing is staged.
   the model is warm and the demo starts instantly.
 - Gate latency is ~4 s per chunk on an M1. Either narrate over it or cut. Don't
   speed up the video to hide it — the honest number is in the article.
+
+## The file
+
+`demo.mp4` — 2560×1440, 1:53, silent with on-screen captions. Produced by
+`./render.sh`, which runs `vhs demo.tape` and then compresses one 14-second
+window where the model is loading and the screen is static.
+
+**That speed-up is the only edit.** Every frame of actual output — the gate
+decisions, Bedrock's answer, the eval, the sweep — plays at real time. The
+`45776ms for 6 chunks` figure on screen is the honest measured latency under
+capture load, and is slower than the ~2.1s/chunk you get running it directly.
+
+`drawtext` is not compiled into the local ffmpeg build, so the sped-up window
+could not be labelled on screen. It is documented here instead.
+
+## If you narrate instead
+
+`PAUSE=4 ./demo.sh` paces the same demo for live commentary. Narration is worth
+real points — Communication Quality is 25% of the rubric, and the abstention
+finding is the strongest thing in the submission but gets only a flashed
+one-line caption in the silent cut.

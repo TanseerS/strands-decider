@@ -13,6 +13,7 @@ with [`../shots.sh`](../shots.sh).
 | `06-pattern-usage.png` | the reusable pattern in three lines | frame from `demo.mp4` @ 110s |
 | `07-git-history.png` | commit history and authorship | live `git log` |
 | `08-repo-structure.png` | project layout | live `ls` |
+| `09-agent-declines.png` | the agent declining, surfacing the note its gate wrongly rejected | live `agent.py` run |
 
 Shots 03–06 are pulled from `demo.mp4` rather than re-run, so the article and the
 video show the **same** run instead of two different ones with different numbers.

@@ -81,6 +81,37 @@ only `.id` and `.text`; `as_chunks()` adapts plain dicts.
 For a Strands agent, call `select()` from an `InterventionHandler` before the
 model call, or in your retriever's post-processing step.
 
+## Letting the agent explain itself
+
+`select()` returns survivors. `report()` returns a `GateReport` that keeps the
+rejections too, which is what lets the agent account for its own context window:
+
+```python
+report = gate.report(user_question, candidate_chunks, k=3)
+
+report.grounding      # "strong" | "partial" | "none"
+report.kept           # what went into the prompt
+report.near_misses    # the best of what did not, for when you decline
+print(report.trace())
+```
+
+```
+grounding: strong
+  used    kb01  0.79  (a concrete procedure, answers it (0.79))
+  ignored kb05  0.55  (does not answer it (0.55))
+  ignored kb04  0.34  (does not answer it (0.34))
+```
+
+`grounding` is the agent-visible consequence of calibration, and it only works
+because `answers_it` is an absolute probability rather than a relative score: the
+strength of the best surviving chunk means something on its own. Feed it into
+your system prompt and the agent matches its tone to its evidence instead of
+always sounding certain — confident at `strong`, explicitly hedged at `partial`.
+
+At `none`, show `near_misses` rather than declining silently. A silent decline
+looks identical whether your memory store is empty or your gate just rejected
+the right note, and you want to be able to tell those apart.
+
 ## Why calibration matters here
 
 `threshold` is applied to a calibrated probability, so 0.45 means the same thing

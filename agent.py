@@ -26,19 +26,29 @@ from pathlib import Path
 import boto3
 import torch
 
-from patterns import ContextGate
-from patterns.context_relevance import as_chunks
+from patterns import ContextGate, GateReport, as_chunks
 from strands_decider.infer import load_engine
 
 CHECKPOINT = "StrandsAgents/strands-decider-2B-hobson-v19"
 BEDROCK_MODEL = "us.amazon.nova-lite-v1:0"
 BEDROCK_REGION = "us-east-1"
 
-SYSTEM = (
+BASE_SYSTEM = (
     "You are a support engineer. Answer the customer's question using only the "
     "reference notes provided. If the notes do not answer it, say so plainly "
     "rather than guessing. Be concise and concrete."
 )
+
+# Decider 2B returns a calibrated probability, not a relative score, so the
+# strength of the surviving evidence is meaningful on its own. That lets the
+# agent match its tone to its evidence instead of always sounding certain.
+GROUNDING_STYLE = {
+    "strong": "The notes directly answer this. Answer plainly and confidently.",
+    "partial": (
+        "The notes only partially cover this. Answer what they support, and say "
+        "explicitly which part of the question you cannot answer from them."
+    ),
+}
 
 STOPWORDS = {
     "the", "a", "an", "is", "are", "was", "were", "our", "my", "we", "i", "it",
@@ -65,12 +75,17 @@ def retrieve(query: str, rows: list[dict], n: int) -> list[dict]:
     return [r for _, r in scored[:n]]
 
 
-def ask_bedrock(client, query: str, notes: list[str]) -> tuple[str, int]:
+def ask_bedrock(
+    client, query: str, notes: list[str], grounding: str = "strong"
+) -> tuple[str, int]:
     context = "\n\n".join(f"- {n}" for n in notes) or "(no reference notes)"
     msg = f"Reference notes:\n{context}\n\nCustomer question:\n{query}"
+    system = BASE_SYSTEM
+    if style := GROUNDING_STYLE.get(grounding):
+        system = f"{BASE_SYSTEM} {style}"
     r = client.converse(
         modelId=BEDROCK_MODEL,
-        system=[{"text": SYSTEM}],
+        system=[{"text": system}],
         messages=[{"role": "user", "content": [{"text": msg}]}],
         inferenceConfig={"maxTokens": 400, "temperature": 0.2},
     )
@@ -127,20 +142,41 @@ def main() -> None:
     print(f"\n  {gate_ms:.0f}ms for {len(verdicts)} chunks "
           f"({gate_ms / len(verdicts):.0f}ms each)\n")
 
-    kept = sorted([v for v in verdicts if v.keep], key=lambda v: -v.relevance)[: args.keep]
-    if not kept:
-        print("Gate kept nothing. The agent declines rather than inventing an answer.")
+    kept_all = sorted([v for v in verdicts if v.keep], key=lambda v: -v.relevance)
+    report = GateReport(
+        kept=tuple(kept_all[: args.keep]),
+        dropped=tuple([v for v in verdicts if not v.keep] + kept_all[args.keep :]),
+    )
+
+    print("Memory trace:")
+    for line in report.trace().splitlines():
+        print(f"  {line}")
+    print()
+
+    if report.grounding == "none":
+        # Declining silently hides the gate's own mistakes. Show what it almost
+        # used, so a wrong rejection is visible instead of looking like an
+        # empty memory store.
+        print("Nothing in memory answers this, so the agent declines rather than")
+        print("inventing an answer. The closest it looked at:\n")
+        for v in report.near_misses:
+            print(f"  {v.id}  {v.relevance:.2f}  {v.text[:88]}...")
         return
 
     client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
-    answer, tokens = ask_bedrock(client, query, [v.text for v in kept])
+    kept = list(report.kept)
+    answer, tokens = ask_bedrock(
+        client, query, [v.text for v in kept], grounding=report.grounding
+    )
 
     print(f"Bedrock ({BEDROCK_MODEL}) answered from {' '.join(v.id for v in kept)}, "
-          f"{tokens} input tokens:\n")
+          f"grounding {report.grounding}, {tokens} input tokens:\n")
     print(answer.strip())
 
     if args.compare:
-        ungated, utokens = ask_bedrock(client, query, [c["text"] for c in candidates])
+        ungated, utokens = ask_bedrock(
+            client, query, [c["text"] for c in candidates], grounding="strong"
+        )
         print(f"\n{'=' * 70}")
         print(f"Ungated: all {len(candidates)} chunks, {utokens} input tokens "
               f"({utokens - tokens:+d} vs gated, {100 * (utokens - tokens) / utokens:.0f}% saved)\n")

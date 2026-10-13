@@ -15,11 +15,12 @@
   +--------------------------------------------+
         |
         |  1 note survives   (decoys dropped, each with a reason)
+        |  grounding: strong | partial | none -> how the agent speaks
         v
   +--------------------------------------------+
   |  AMAZON BEDROCK                             |   us.amazon.nova-lite-v1:0
-  |  writes the answer from surviving notes      |   106 input tokens
-  +--------------------------------------------+       vs 329 ungated
+  |  tone set by the gate's grounding level      |   117 input tokens
+  +--------------------------------------------+       vs 340 ungated
         |
         v
     grounded answer

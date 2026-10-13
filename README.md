@@ -206,8 +206,8 @@ Decider 2B gate:
 
   13138ms for 6 chunks (2190ms each)
 
-Bedrock answered from kb01, 106 input tokens
-Ungated: all 6 chunks, 329 input tokens (68% saved)
+Bedrock answered from kb01, grounding strong, 117 input tokens
+Ungated: all 6 chunks, 340 input tokens (66% saved)
 ```
 
 Both answers are correct here — the gated one just costs a third as much.

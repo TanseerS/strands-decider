@@ -13,6 +13,7 @@ mkdir -p images
 # render <output.png> <height> <command...>
 render() {
   out=$1; h=$2; shift 2
+  sleep_for=${SLEEP:-4s}
   cat > /tmp/shot.tape <<TAPE
 Output "/tmp/shot.mp4"
 Set Shell "bash"
@@ -29,7 +30,7 @@ Enter
 Show
 Type "$*"
 Enter
-Sleep 4s
+Sleep $sleep_for
 TAPE
   vhs /tmp/shot.tape >/dev/null 2>&1
   ffmpeg -v error -sseof -1 -i /tmp/shot.mp4 -frames:v 1 "images/$out" -y
@@ -48,11 +49,15 @@ render 02-decoy-notes.png     700 "cut -c1-170 data/memory.jsonl | sed -n '1,3p'
 render 07-git-history.png     620 "git --no-pager log --format='%h  %an <%ae>  %ad  %s' --date=short"
 render 08-repo-structure.png  900 "ls -1 *.py *.md *.sh *.tape data/ patterns/"
 
+# The decline case needs a live run: it is the only way to show the agent
+# surfacing the note its own gate wrongly rejected.
+SLEEP=75s render 09-agent-declines.png  900 "./.venv/bin/python agent.py 'we were charged twice for the same annual plan' 2>/dev/null | tail -22"
+
 echo "extracting from demo.mp4:"
-grab 03-gate-decisions.png     62
-grab 04-eval-results.png       93
-grab 05-sweep-abstention.png   97
-grab 06-pattern-usage.png     110
+grab 03-gate-decisions.png     72
+grab 04-eval-results.png       94
+grab 05-sweep-abstention.png   98
+grab 06-pattern-usage.png     111
 
 echo
 ls -la images/

@@ -91,6 +91,53 @@ class GateResult:
         return f"{verdict} {self.id} relevance={self.relevance:.2f} {self.reason}"
 
 
+@dataclass(frozen=True)
+class GateReport:
+    """What the gate did, in a form the agent can act on and a human can read.
+
+    `grounding` is the agent-visible consequence of calibration. Because
+    `answers_it` is a calibrated probability rather than a relative score, the
+    strength of the best surviving chunk is meaningful on its own, so the agent
+    can decide how confidently to speak instead of always sounding certain.
+    """
+
+    kept: tuple[GateResult, ...]
+    dropped: tuple[GateResult, ...]
+
+    @property
+    def grounding(self) -> str:
+        if not self.kept:
+            return "none"
+        best = max(r.relevance for r in self.kept)
+        return "strong" if best >= 0.7 else "partial"
+
+    @property
+    def near_misses(self) -> tuple[GateResult, ...]:
+        """The best of what was discarded -- what the agent almost used."""
+        return tuple(sorted(self.dropped, key=lambda r: -r.relevance)[:3])
+
+    def trace(self) -> str:
+        """A memory trace in plain words. Every line is a decision with a number."""
+        lines = [f"grounding: {self.grounding}"]
+        for r in sorted(self.kept, key=lambda r: -r.relevance):
+            lines.append(
+                f"  used    {r.id}  {r.relevance:.2f}  "
+                f"({_specificity_word(r)}, {r.reason})"
+            )
+        for r in self.near_misses:
+            lines.append(f"  ignored {r.id}  {r.relevance:.2f}  ({r.reason})")
+        return "\n".join(lines)
+
+
+def _specificity_word(r: GateResult) -> str:
+    s = r.axes.get("specificity", 1.0)
+    if s >= 1.5:
+        return "a concrete procedure"
+    if s >= 0.75:
+        return "general guidance"
+    return "vague background"
+
+
 class ContextGate:
     """Decide which candidate chunks are worth putting in the prompt."""
 
@@ -149,6 +196,20 @@ class ContextGate:
         kept = [r for r in self.score(query, chunks) if r.keep]
         kept.sort(key=lambda r: -r.relevance)
         return kept[:k] if k else kept
+
+    def report(
+        self, query: str, chunks: Iterable[Chunk], k: int | None = None
+    ) -> GateReport:
+        """Like `select`, but keeps the rejections so the agent can explain itself."""
+        results = self.score(query, chunks)
+        kept = sorted([r for r in results if r.keep], key=lambda r: -r.relevance)
+        if k:
+            spill = kept[k:]
+            kept = kept[:k]
+        else:
+            spill = []
+        dropped = [r for r in results if not r.keep] + spill
+        return GateReport(kept=tuple(kept), dropped=tuple(dropped))
 
 
 def as_chunks(rows: Sequence[dict]) -> list[Chunk]:

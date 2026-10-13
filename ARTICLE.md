@@ -98,14 +98,55 @@ with a reason attached to each decision:
 [drop] kb03  answers_it=0.23 same_topic=0.25  -- does not answer it (0.23)
 [drop] kb02  answers_it=0.19 same_topic=0.19  -- does not answer it (0.19)
 
-Bedrock answered from kb01, 106 input tokens
-Ungated: all 6 chunks, 329 input tokens (68% fewer)
+Bedrock answered from kb01, grounding strong, 117 input tokens
+Ungated: all 6 chunks, 340 input tokens (66% fewer)
 ```
 
 Both answers are correct here. The gated one just costs a third as much.
 
 I assumed the gate's real value was preventing wrong answers. I was wrong about
 that too — see below.
+
+## The agent explains its own memory
+
+Because every decision carries a named axis and a number, the agent can account
+for what it read — and what it refused to read:
+
+```
+Memory trace:
+  grounding: strong
+    used    kb01  0.79  (a concrete procedure, answers it (0.79))
+    ignored kb05  0.55  (does not answer it (0.55))
+    ignored kb02  0.19  (does not answer it (0.19))
+```
+
+That is not just logging. `grounding` changes how the agent speaks, and it only
+works because the score is calibrated rather than relative — the strength of the
+best surviving note means something by itself:
+
+- **strong** (best ≥ 0.7) — answer plainly
+- **partial** — answer what the notes support, and say which part of the question
+  they do not cover
+- **none** — decline
+
+The decline case is the one I like most, because it makes the gate's own
+mistakes visible. Remember kb03, the note the gate wrongly rejects. Ask "we were
+charged twice for the same annual plan" and the agent says:
+
+![The agent declining, and showing the note its own gate rejected](images/09-agent-declines.png)
+
+```
+Nothing in memory answers this, so the agent declines rather than
+inventing an answer. The closest it looked at:
+
+  kb03  0.27  Double charges: duplicate charges occur when a payment is retried
+              after a gateway timeout...
+```
+
+The correct answer is sitting right there at 0.27, and you can see the gate threw
+it away. A silent decline looks identical whether the memory store is empty or
+the gate just made a mistake, and those are very different problems. Showing the
+near-misses means a bad rejection shows up as a bug report instead of a shrug.
 
 ## "Isn't this just a reranker?"
 

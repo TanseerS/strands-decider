@@ -128,6 +128,23 @@ scored correctly. Removing it took F1 from 0.74 to 0.92. Raise it to ~0.10 only
 if a wrong chunk costs you more than a missing one, and sweep it on your own
 data with `sweep.py` rather than trusting either number.
 
+## `answers_it` means "answers all of it"
+
+The axis is strict, and on compound questions that bites. A question asking about
+two things — "we were charged twice **for the same annual plan**" — scores 0.27
+against a note explaining duplicate charges generically, because the note says
+nothing about plans. Remove those two words and the same note scores 0.65.
+
+```
+0.27  we were charged twice for the same annual plan
+0.65  we got a duplicate charge
+```
+
+Softening the wording barely helps (`"would this be useful"` reaches 0.39). If
+your queries are compound, either split them into separate axes and combine the
+results yourself, or accept that the gate will decline rather than half-answer.
+`probe.py` in the repo is the tool for diagnosing this on your own corpus.
+
 ## Knobs
 
 | | default | |

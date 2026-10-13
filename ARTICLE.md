@@ -312,9 +312,9 @@ Full usage notes: [`PATTERN.md`](https://github.com/TanseerS/strands-decider/blo
   reports ~115 ms on a 3090. On a laptop this is a batch-shaped gate, not a hot
   path. It costs wall-clock to save tokens and avoid wrong context, and whether
   that trade is worth it depends on your hardware.
-- **One note still gets rejected outright** at the new settings, not abstained:
-  kb03 scores 0.27 on "we were charged twice for the same annual plan" despite
-  being exactly right. I do not have a good explanation for that one yet.
+- **The gate is strict about compound questions.** See below — this is the one
+  failure in the eval, and it turned out to be a property worth knowing rather
+  than a bug.
 
 ## Running it
 
@@ -333,6 +333,54 @@ python sweep.py       # find your own operating point
 
 Decider 2B runs locally and needs no AWS access. Bedrock needs credentials with
 `bedrock:InvokeModel` in `us-east-1`.
+
+## Why the gate rejects the one note it should keep
+
+kb03 answers "we were charged twice for the same annual plan" and the gate scores
+it 0.27. That was the single miss in the eval, and I could not explain it, so I
+took it apart: same note, same axis, different phrasings of the question.
+
+```
+0.27  we were charged twice for the same annual plan
+0.26  our card was billed two times for one annual subscription
+0.52  we were charged twice
+0.65  we got a duplicate charge
+0.70  why did a payment get charged twice?
+```
+
+It is the words *annual plan*. Drop them and the score nearly triples.
+
+kb03 explains that duplicate charges come from a payment retried after a gateway
+timeout. It says nothing about plans or subscriptions. The question asks about
+two things — a duplicate charge, **and** an annual plan — and the note covers one
+of them. The model is not confused. It is reading "does this note answer the
+user's question" strictly, and refusing to call partial coverage an answer.
+
+Rewording the axis barely moves it (`"would this be useful"` gets 0.39, still
+below threshold), and against that question *no* note in the store scores above
+0.34 — the VAT note outranks the correct one. The model's position is that
+nothing in this memory fully answers that question, and it is not wrong.
+
+So the lesson is about how you phrase the axis, not about the model:
+**`answers_it` means "answers all of it".** On compound questions a note covering
+half of it reads as a non-answer. If you want partial credit, split the question
+into separate axes, or soften the wording and accept lower precision. I have left
+the strict version in, because for a context gate I would rather the agent
+declines and shows me kb03 at 0.27 than quietly answers half the question.
+
+Raw output: [`data/probe_result.txt`](https://github.com/TanseerS/strands-decider/blob/main/data/probe_result.txt),
+reproducible with `python probe.py`.
+
+## Provenance
+
+The repository history starts before the hackathon opened. The early commits are
+exploratory — a ticket router, an interpretable-embeddings experiment, a batching
+benchmark — made while working out what Decider 2B was good for. Both are kept in
+the repo as an appendix, because the context gate came directly out of the second
+one: named, calibrated axes instead of one opaque score.
+
+The agent itself, the reusable pattern, the eval and everything in this article
+were built for this hackathon and have not been published anywhere before.
 
 ## Build log
 

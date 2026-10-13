@@ -1,0 +1,28 @@
+
+
+1. Is it the question's phrasing?  (kb03, original axis wording)
+
+   0.27  we were charged twice for the same annual plan
+   0.52  we were charged twice
+   0.65  we got a duplicate charge
+   0.61  there is a duplicate charge on our account
+   0.70  why did a payment get charged twice?
+   0.26  our card was billed two times for one annual subscription
+
+2. Is it the note?  (original question, every note scored)
+
+   0.34  kb12  Invoice VAT rates: invoices generated before 1 April use t...
+   0.27  kb03  Double charges: duplicate charges occur when a payment is ... <- the correct note
+   0.25  kb02  Card charge disputes: if a customer's card was charged on ...
+   0.24  kb06  SSO availability: SAML and OIDC single sign-on are include...
+   0.20  kb04  Refund timelines: refunds issued before 14:00 UTC settle s...
+   0.19  kb05  Payout reconciliation drift: a persistent sub-1% discrepan...
+
+3. Is it my axis wording?  (kb03 + original question)
+
+   0.27  original      "Does the reference note contain information that actually answ..."
+   0.27  explains      "Does the reference note explain the situation the user is desc..."
+   0.39  useful        "Would this reference note be useful to someone answering the u..."
+   0.38  relevant      "Is the reference note relevant to the user's question?..."
+   0.28  same_problem  "Is the reference note about the same problem the user is descr..."
+.venv/bin/python probe.py  5.52s user 11.86s system 25% cpu 1:08.85 total

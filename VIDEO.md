@@ -9,7 +9,7 @@ beats below. Everything here is real output — nothing is staged.
 | 0:15–0:40 | `data/memory.jsonl`, highlight kb01 vs kb02/kb03 | "These three notes all use the same words: payout, charge, billing. Only one answers a question about failed payout batches. Embedding similarity can't tell them apart, because they genuinely are similar." |
 | 0:40–1:20 | `agent.py --compare` running, gate output on screen | "Retrieval proposes six. Decider 2B scores each with a typed question — does this note actually answer the question — and keeps one. Every decision comes with a calibrated number and a reason." |
 | 1:20–1:45 | Point at the kb05 line | "This is the part I didn't expect. kb05 is a real payout note, about a *different* payout problem. Decider scored it 0.55 — maximum doubt — and the gate abstained rather than guessing. Dropping is the safe direction: a missing note makes the agent say I don't know, a wrong note makes it answer confidently and wrongly." |
-| 1:45–2:05 | Bedrock answer + token counts | "Bedrock Nova writes the reply from the one surviving note. 106 input tokens instead of 329 — 68% fewer — and it can't be led astray by the card-charge note." |
+| 1:45–2:05 | Bedrock answer + token counts | "Bedrock Nova writes the reply from the one surviving note. 117 input tokens instead of 340 — 66% fewer — and it can't be led astray by the card-charge note." |
 | 2:05–2:35 | `eval.py` results table | "Twelve labelled queries. Here's what the gate does to precision and recall." |
 | 2:35–3:00 | `patterns/context_relevance.py` + PATTERN.md | "The reusable piece is one class and one typed question set. Point it at any engine, any chunks, and it drops into your retriever's post-processing or a Strands InterventionHandler." |
 
@@ -23,7 +23,7 @@ beats below. Everything here is real output — nothing is staged.
 
 ## The file
 
-`demo.mp4` — 2560×1440, 1:53, silent with on-screen captions. Produced by
+`demo.mp4` — 2560×1440, 1:54, silent with on-screen captions. Produced by
 `./render.sh`, which runs `vhs demo.tape` and then compresses one 14-second
 window where the model is loading and the screen is static.
 

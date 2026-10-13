@@ -222,3 +222,56 @@ confidently and wrongly.
 Decider 2B runs locally (~4 s for 6 chunks on an M1; the blog reports ~115 ms per
 decision on a 3090). The generative half is Bedrock `us.amazon.nova-lite-v1:0` in
 `us-east-1` — change `BEDROCK_MODEL` in `agent.py` to use another.
+
+## Does the gate actually help?
+
+Twelve labelled queries over the memory store, one correct note each:
+
+```sh
+.venv/bin/python eval.py     # labelled eval; caches raw scores
+.venv/bin/python sweep.py    # sweep thresholds offline, instantly
+```
+
+```
+             precision   recall      F1
+retriever         0.17     1.00    0.29
++ gate            0.92     0.92    0.92
+
+context shrunk 15321 -> 2455 chars (84% less)
+```
+
+The retriever's precision is capped at 1/k by construction — it returns six
+candidates whether or not six are relevant. The gate supplies the relevance floor
+it lacks.
+
+### The abstention floor was pure loss
+
+The gate originally shipped with `threshold=0.6, min_confidence=0.35`, on the
+reasoning that refusing to guess is safer than guessing. Measured, that scored
+**P 1.00 / R 0.58** — it discarded five of twelve correct answers, four of them by
+abstaining on notes it had already scored correctly.
+
+```
+thresh  minconf   prec  recall     F1  context
+  0.45     0.00   0.92    0.92   0.92      16%   <- current default
+  0.45     0.10   1.00    0.83   0.91      13%   <- precision-first
+  0.60     0.35   1.00    0.58   0.74       9%   <- original guess
+```
+
+Abstention is not free safety. It bought no precision here and cost a third of the
+recall. `sweep.py` exists so you can find your own operating point rather than
+inheriting a guess — `eval.py` caches the raw per-chunk scores, so sweeping is
+instant and never re-runs the model.
+
+One genuine miss remains at the current settings: kb03 scores 0.27 on "we were
+charged twice for the same annual plan" despite being exactly the right note. That
+one is unexplained.
+
+## Submission assets
+
+| File | |
+|---|---|
+| `ARTICLE.md` | Draft of the Builder Center article |
+| `PATTERN.md` | The reusable decision pattern, with usage notes |
+| `VIDEO.md` | Timed shot list for the demo video |
+| `demo.sh` | Scripted demo, paced for screen recording |

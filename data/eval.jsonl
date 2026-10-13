@@ -1,0 +1,12 @@
+{"query":"our nightly payout batch keeps failing","gold":["kb01"]}
+{"query":"why was my card charged on the 3rd when my billing date is the 15th","gold":["kb02"]}
+{"query":"we were charged twice for the same annual plan","gold":["kb03"]}
+{"query":"how long until a refund actually reaches the customer","gold":["kb04"]}
+{"query":"our payout totals are off by half a percent every month","gold":["kb05"]}
+{"query":"does the starter plan include single sign on","gold":["kb06"]}
+{"query":"we are getting 429 errors from the search endpoint","gold":["kb07"]}
+{"query":"password reset emails never arrive for our users","gold":["kb08"]}
+{"query":"the app crashes when opening the settings tab on android","gold":["kb09"]}
+{"query":"tracking number has not updated in ten days","gold":["kb10"]}
+{"query":"someone logged into our admin account from an unknown IP","gold":["kb11"]}
+{"query":"the VAT rate on our invoice looks wrong","gold":["kb12"]}

@@ -23,8 +23,13 @@ Drop-in notes
 * Any object with `.ask(state, questions) -> response` works as the engine.
 * `threshold` is on a calibrated probability, so 0.6 means the same thing across
   different corpora. That is the point of using a calibrated model here.
-* `min_confidence` abstains rather than guessing. An uncertain chunk is dropped,
-  which is the safe direction for context injection.
+* `min_confidence` abstains rather than guessing, and defaults to 0.0 -- off.
+  Abstention sounds like the safe default and measured badly: on the bundled eval
+  a floor of 0.35 cut recall from 0.92 to 0.58 and bought no extra precision,
+  because the chunks it suppressed were ones the threshold already handled
+  correctly. Raise it to ~0.10 only if a wrong chunk costs you more than a
+  missing one. Sweep it on your own data with sweep.py rather than trusting
+  either default.
 * To wire into a Strands agent, call `select()` inside an InterventionHandler
   before the model call, or inside your retriever's post-processing step.
 """
@@ -93,8 +98,8 @@ class ContextGate:
         self,
         engine: Any,
         *,
-        threshold: float = 0.6,
-        min_confidence: float = 0.35,
+        threshold: float = 0.45,
+        min_confidence: float = 0.0,
         questions: dict[str, Question] | None = None,
     ) -> None:
         self.engine = engine

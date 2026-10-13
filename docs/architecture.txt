@@ -1,0 +1,25 @@
+   user question
+        |
+        v
+  +--------------------------------------------+
+  |  retriever (lexical, top-k, no floor)       |   k candidates, relevant or not
+  +--------------------------------------------+
+        |
+        |  6 candidate notes
+        v
+  +--------------------------------------------+
+  |  STRANDS DECIDER 2B          runs locally   |   one ask() per chunk:
+  |  pattern: #context-memory    no network     |     answers_it    (noul)
+  |                              no token cost  |     same_topic    (noul)
+  |  returns calibrated numbers, not text       |     specificity   (score)
+  +--------------------------------------------+
+        |
+        |  1 note survives   (decoys dropped, each with a reason)
+        v
+  +--------------------------------------------+
+  |  AMAZON BEDROCK                             |   us.amazon.nova-lite-v1:0
+  |  writes the answer from surviving notes      |   106 input tokens
+  +--------------------------------------------+       vs 329 ungated
+        |
+        v
+    grounded answer

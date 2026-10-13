@@ -171,3 +171,54 @@ for an 11-axis rubric on an M1; a CUDA box will be several times faster.
 2. Point `--corpus` at your own JSONL of `{"id", "text", "period"}`.
 3. `confidence.csv` is written alongside the values. Filter on it before trusting a
    row: a fingerprint built from low-confidence answers is noise with a name.
+
+---
+
+# The agent: a context window chosen by Decider 2B
+
+**Pattern:** `#context-memory` — see [PATTERN.md](PATTERN.md) for the reusable asset.
+
+Retrieval proposes, Decider 2B disposes, Amazon Bedrock writes the answer.
+
+```sh
+.venv/bin/python agent.py --compare "our nightly payout batch keeps failing"
+```
+
+A lexical retriever pulls six candidate notes from memory. Decider 2B scores each
+one with a typed question and keeps only those that actually answer the question.
+Bedrock Nova drafts the reply from the survivors.
+
+The decoys are the point. Ask about failed payouts and the retriever happily
+returns notes about unexpected card charges and duplicate charges: same
+vocabulary, same domain, wrong answer. Similarity cannot separate them because
+they genuinely are similar.
+
+```
+retriever proposed 6: kb01 kb05 kb02 kb03 kb04 kb06
+
+Decider 2B gate:
+  [keep] kb01  answers_it=0.79 same_topic=0.81 specificity=1.54  -- answers it (0.79)
+  [drop] kb05  answers_it=0.55 same_topic=0.62 specificity=1.26  -- abstained, confidence 0.10
+  [drop] kb04  answers_it=0.34 same_topic=0.39 specificity=0.98  -- abstained, confidence 0.32
+  [drop] kb06  answers_it=0.28 same_topic=0.28 specificity=0.91  -- does not answer it (0.28)
+  [drop] kb03  answers_it=0.23 same_topic=0.25 specificity=1.14  -- does not answer it (0.23)
+  [drop] kb02  answers_it=0.19 same_topic=0.19 specificity=1.00  -- does not answer it (0.19)
+
+Bedrock answered from kb01, 106 input tokens
+Ungated: all 6 chunks, 329 input tokens (68% saved)
+```
+
+Both answers are correct here — the gated one just costs a third as much and
+cannot be led astray by kb02. On a larger memory store, where the decoys
+outnumber the answer, that second property matters more than the tokens.
+
+Note `kb05`: a real payout note, about a *different* payout problem. The gate
+abstained at 0.55 rather than guessing. Dropping is the safe direction — a
+missing note makes the agent say "I don't know", a wrong one makes it answer
+confidently and wrongly.
+
+## Models
+
+Decider 2B runs locally (~4 s for 6 chunks on an M1; the blog reports ~115 ms per
+decision on a 3090). The generative half is Bedrock `us.amazon.nova-lite-v1:0` in
+`us-east-1` — change `BEDROCK_MODEL` in `agent.py` to use another.
